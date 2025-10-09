@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>mainWindow</class>
+ <widget class="QMainWindow" name="mainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>739</width>
+    <height>689</height>
+   </rect>
+  </property>
+  <property name="font">
+   <font>
+    <pointsize>10</pointsize>
+   </font>
+  </property>
+  <property name="windowTitle">
+   <string>自动跟进工具V1.0-广州汇法出品</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QGroupBox" name="groupBox">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>200</y>
+      <width>661</width>
+      <height>321</height>
+     </rect>
+    </property>
+    <property name="title">
+     <string>客户名单</string>
+    </property>
+    <widget class="QPushButton" name="startUpload">
+     <property name="geometry">
+      <rect>
+       <x>260</x>
+       <y>273</y>
+       <width>113</width>
+       <height>30</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>开始跟进</string>
+     </property>
+    </widget>
+    <widget class="QTableWidget" name="tableWidget">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>30</y>
+       <width>621</width>
+       <height>231</height>
+      </rect>
+     </property>
+     <column>
+      <property name="text">
+       <string>客户ID</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>客户</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>过期时间</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>跟进状态</string>
+      </property>
+     </column>
+    </widget>
+   </widget>
+   <widget class="QGroupBox" name="groupBox_2">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>10</y>
+      <width>661</width>
+      <height>171</height>
+     </rect>
+    </property>
+    <property name="title">
+     <string>跟进配置</string>
+    </property>
+    <widget class="QLabel" name="label_5">
+     <property name="geometry">
+      <rect>
+       <x>40</x>
+       <y>70</y>
+       <width>71</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>过期时间：</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="limitCount">
+     <property name="geometry">
+      <rect>
+       <x>115</x>
+       <y>68</y>
+       <width>130</width>
+       <height>25</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>10</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="startSplitExcel">
+     <property name="geometry">
+      <rect>
+       <x>250</x>
+       <y>120</y>
+       <width>113</width>
+       <height>30</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>获取跟进名单</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="password">
+     <property name="geometry">
+      <rect>
+       <x>386</x>
+       <y>30</y>
+       <width>130</width>
+       <height>25</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="account">
+     <property name="geometry">
+      <rect>
+       <x>116</x>
+       <y>29</y>
+       <width>130</width>
+       <height>25</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_7">
+     <property name="geometry">
+      <rect>
+       <x>26</x>
+       <y>32</y>
+       <width>80</width>
+       <height>18</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>登录账号：</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_8">
+     <property name="geometry">
+      <rect>
+       <x>296</x>
+       <y>33</y>
+       <width>80</width>
+       <height>18</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>系统密码：</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QPlainTextEdit" name="logShow">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>540</y>
+      <width>661</width>
+      <height>121</height>
+     </rect>
+    </property>
+    <property name="readOnly">
+     <bool>true</bool>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
