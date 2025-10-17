@@ -1,5 +1,6 @@
 from datetime import datetime
 import json
+import math
 import os
 import shutil
 import threading
@@ -10,6 +11,7 @@ import pandas as pd
 import requests
 from SignalManager import signal_manager
 from requests_toolbelt.multipart.encoder import MultipartEncoder
+from tqdm import tqdm
 
 '''
 Descripttion: 
@@ -26,6 +28,7 @@ class Tools:
     upload_file_number=0    #需要上传的文件数量
     failed_file_number=0    #上传失败的文件数量
     success_file_number=0    #上传成功的文件数量
+    fixed_headers=['监测名单', '证件号码', '类型']
     def __init__(self):
         pass
         # self.username=username
@@ -152,7 +155,7 @@ class Tools:
         signal_manager.log_signal.emit(" - 完成!")
         signal_manager.log_signal.emit("数据处理完成")
 
-    def thread_split_excel(self,input_file, output_folder,deal_file_limit=5000):
+    def thread_split_excel(self,input_file, output_folder,deal_file_limit=10000):
         # 发送开始处理的消息
         signal_manager.log_signal.emit("开始处理数据...")
         # thread1 = threading.Thread(target=self.split_excel_pd,args=(input_file, output_folder,deal_file_limit))
@@ -160,13 +163,12 @@ class Tools:
         thread1.start()
         # thread1.join()
         # 发送完成消息
-    def split_excel_pd2(self,input_file, output_folder,deal_file_limit=5000):
+    def split_excel_pd2(self,input_file, output_folder,deal_file_limit=10000):
         """分割大Excel文件到临时文件夹"""
         signal_manager.btn_status_signal.emit(1,False)
         upload_file_list=[]
         upload_file_path=""
-        # 固定的标题头
-        fixed_headers = ['监测名单', '证件号码', '类型']
+        
          # 读取 Excel 文件
         xls = pd.ExcelFile(input_file)
         all_dfs = []
@@ -175,16 +177,16 @@ class Tools:
             # 读取 sheet 数据
             df = pd.read_excel(xls, sheet_name=sheet_name)
             # 检查标题头
-            if not all(header in df.columns for header in fixed_headers):
+            if not all(header in df.columns for header in self.fixed_headers):
                 signal_manager.log_signal.emit(f"Sheet '{sheet_name}' 缺少固定的标题头（监测名单、证件号码、类型），跳过")
                 signal_manager.show_signal.emit(f"Sheet '{sheet_name}' 缺少固定的标题头（监测名单、证件号码、类型），跳过")
                 break
             # 只保留固定的标题头列（忽略多余列）
-            df = df[fixed_headers]
+            df = df[self.fixed_headers]
             # 如果 sheet 为空，仅保存标题头
             if df.empty:
                 output_file = os.path.join(upload_file_path, 'excel', "part_0001.xlsx")
-                df.to_excel(output_file, index=False, columns=fixed_headers)
+                df.to_excel(output_file, index=False, columns=self.fixed_headers)
                 print(f"Sheet '{sheet_name}' 为空，生成文件: {output_file}")
                 continue
             else:
@@ -209,16 +211,16 @@ class Tools:
                 df = pd.read_excel(xls, sheet_name=sheet_name)
 
                 # 检查标题头
-                if not all(header in df.columns for header in fixed_headers):
+                if not all(header in df.columns for header in self.fixed_headers):
                     signal_manager.log_signal.emit(f"Sheet '{sheet_name}' 缺少固定的标题头（监测名单、证件号码、类型），跳过")
                     signal_manager.show_signal.emit(f"Sheet '{sheet_name}' 缺少固定的标题头（监测名单、证件号码、类型），跳过")
                     break
                 # 只保留固定的标题头列（忽略多余列）
-                df = df[fixed_headers]
+                df = df[self.fixed_headers]
                 # 如果 sheet 为空，仅保存标题头
                 if df.empty:
                     output_file = os.path.join(upload_file_path, 'excel', "part_0001.xlsx")
-                    df.to_excel(output_file, index=False, columns=fixed_headers)
+                    df.to_excel(output_file, index=False, columns=self.fixed_headers)
                     print(f"Sheet '{sheet_name}' 为空，生成文件: {output_file}")
                     continue
                 # 按 max_rows 分割数据
@@ -235,7 +237,7 @@ class Tools:
                     output_file = os.path.join(upload_file_path,"excel",temp_name)
 
                     # 保存到新的 Excel 文件
-                    df_chunk.to_excel(output_file, index=False, columns=fixed_headers)
+                    df_chunk.to_excel(output_file, index=False, columns=self.fixed_headers)
                     upload_file_list.append(temp_name)
                     print(f"生成文件: {temp_name}，行数: {len(df_chunk)}")
                     signal_manager.log_signal.emit(f"生成文件: {temp_name}，行数: {len(df_chunk)}")
@@ -249,15 +251,14 @@ class Tools:
             print(f"发生错误: {e}")
             signal_manager.btn_status_signal.emit(1,True)
             return None    
-    def split_excel_merge(self,input_file, output_folder,deal_file_limit=5000):
+    def split_excel_merge(self,input_file, output_folder,deal_file_limit=10000):
         """
         先合并所有的sheet,然后再进行分割
         分割大Excel文件到临时文件夹"""
         signal_manager.btn_status_signal.emit(1,False)
         upload_file_list=[]
         upload_file_path=""
-        # 固定的标题头
-        fixed_headers = ['监测名单', '证件号码', '类型']
+        
         
         # 1. 创建带时间戳的临时文件夹
         upload_file_path = os.path.join(output_folder, f"temp_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
@@ -270,8 +271,7 @@ class Tools:
         try:
             # 读取 Excel 文件
             xls = pd.ExcelFile(input_file)
-            # 固定的标题头
-            fixed_headers = ['监测名单', '证件号码', '类型']
+            
             # 遍历每个 sheet
             part_index=0
             # 初始化一个空的DataFrame用于合并
@@ -301,7 +301,7 @@ class Tools:
                         
                 # 只保留前三列
                 df = df.iloc[:, :3]
-                df.columns = fixed_headers
+                df.columns = self.fixed_headers
                
                  # 根据第一列字符串长度修改第三列
                 df['类型'] = df['监测名单'].apply(
@@ -329,7 +329,7 @@ class Tools:
                 output_file = os.path.join(upload_file_path,"excel",temp_name)
 
                 # 保存到新的 Excel 文件
-                df_chunk.to_excel(output_file, index=False, columns=fixed_headers)
+                df_chunk.to_excel(output_file, index=False, columns=self.fixed_headers)
                 upload_file_list.append(temp_name)
                 print(f"生成文件: {temp_name}，行数: {len(df_chunk)}")
                 signal_manager.log_signal.emit(f"生成文件: {temp_name}，行数: {len(df_chunk)}")
@@ -349,13 +349,12 @@ class Tools:
             print(f"发生错误: {e}")
             signal_manager.btn_status_signal.emit(1,True)
             return None
-    def split_excel_pd(self,input_file, output_folder,deal_file_limit=5000):
+    def split_excel_pd(self,input_file, output_folder,deal_file_limit=10000):
         """分割大Excel文件到临时文件夹"""
         signal_manager.btn_status_signal.emit(1,False)
         upload_file_list=[]
         upload_file_path=""
-        # 固定的标题头
-        fixed_headers = ['监测名单', '证件号码', '类型']
+        
         
         # 1. 创建带时间戳的临时文件夹
         upload_file_path = os.path.join(output_folder, f"temp_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
@@ -375,7 +374,7 @@ class Tools:
                 df = pd.read_excel(xls, sheet_name=sheet_name)
 
                 # 检查标题头
-                if not all(header in df.columns for header in fixed_headers):
+                if not all(header in df.columns for header in self.fixed_headers):
                     signal_manager.log_signal.emit(f"Sheet '{sheet_name}' 缺少固定的标题头（监测名单、证件号码、类型），跳过")
                     signal_manager.show_signal.emit(f"Sheet '{sheet_name}' 缺少固定的标题头（监测名单、证件号码、类型），跳过")
                     is_error=True
@@ -385,11 +384,11 @@ class Tools:
                         print(f"移除目录失败：{e}")
                     break
                 # 只保留固定的标题头列（忽略多余列）
-                df = df[fixed_headers]
+                df = df[self.fixed_headers]
                 # 如果 sheet 为空，仅保存标题头
                 if df.empty:
                     output_file = os.path.join(upload_file_path, 'excel', "part_0001.xlsx")
-                    df.to_excel(output_file, index=False, columns=fixed_headers)
+                    df.to_excel(output_file, index=False, columns=self.fixed_headers)
                     print(f"Sheet '{sheet_name}' 为空，生成文件: {output_file}")
                     continue
                 # 按 max_rows 分割数据
@@ -405,7 +404,7 @@ class Tools:
                     output_file = os.path.join(upload_file_path,"excel",temp_name)
 
                     # 保存到新的 Excel 文件
-                    df_chunk.to_excel(output_file, index=False, columns=fixed_headers)
+                    df_chunk.to_excel(output_file, index=False, columns=self.fixed_headers)
                     upload_file_list.append(temp_name)
                     print(f"生成文件: {temp_name}，行数: {len(df_chunk)}")
                     signal_manager.log_signal.emit(f"生成文件: {temp_name}，行数: {len(df_chunk)}")
@@ -546,3 +545,109 @@ class Tools:
         signal_manager.log_signal.emit("处理完成")
         signal_manager.show_signal.emit("处理完成")
         print(f"需要上传的文件数量：{upload_file_number}",f",上传成功：{success_file_number}",f",上传失败：{failed_file_number}")    
+
+    def merge_excel_excels(self,folder_path, output_path):
+        """
+        将所有Excel文件中的所有Sheet合并到一个Sheet中
+        """
+        
+        # 获取所有Excel文件
+        excel_files = [f for f in os.listdir(folder_path) 
+                    if f.endswith(('.xlsx', '.xls'))]
+        
+        combined_df = pd.DataFrame() 
+        
+        print(f"找到 {len(excel_files)} 个Excel文件")
+        
+        for file in tqdm(excel_files, desc="处理文件中"):
+            file_path = os.path.join(folder_path, file)
+            
+            try:
+                # 读取Excel文件的所有Sheet
+                excel_file = pd.ExcelFile(file_path)
+                
+                for sheet_name in excel_file.sheet_names:
+                    # 读取每个Sheet
+                    print(f"处理文件 {file}, Sheet {sheet_name}")
+                    df = pd.read_excel(file_path, 
+                                        sheet_name=sheet_name,
+                                        header=None,  # 关键参数：无标题行
+                                        dtype=str)     # 统一读为字符串，避免类型问题)
+                    
+                    # 检查第一行第一列是否包含关键词
+                    if df.shape[0] > 0 and df.shape[1] > 0:
+                        first_cell_value = str(df.iloc[0, 0]) if pd.notna(df.iloc[0, 0]) else ""
+                        
+                        if '名单' in first_cell_value or '名称' in first_cell_value or '列表' in first_cell_value:
+                            # 丢弃第一行
+                            df = df.iloc[1:].reset_index(drop=True)
+                            print(f"Sheet '{sheet_name}': 丢弃了标题行")
+                    # 确保第三列存在
+                    # 检查列数并补足到三列
+                    current_cols = df.shape[1]
+                    # print(f"Sheet '{sheet_name}' 有 {current_cols} 列")
+                    if current_cols < 3:
+                        # 需要补充的列数
+                        cols_to_add = 3 - current_cols
+                        # 添加新列
+                        for i in range(cols_to_add):
+                            new_col_name = f"c_{current_cols + i + 1}"
+                            df[new_col_name] = ''
+                            
+                    # 只保留前三列
+                    df = df.iloc[:, :3]
+                    df.columns = self.fixed_headers
+                
+                    # 根据第一列字符串长度修改第三列
+                    df['类型'] = df['监测名单'].apply(
+                        lambda x: '个人' if isinstance(x, str) and len(str(x).strip()) < 5 else '企业'
+                    )
+                        
+                    # 合并到总的DataFrame
+                    combined_df = pd.concat([combined_df, df], ignore_index=True)
+                        
+            except Exception as e:
+                print(f"处理文件 {file} 时出错: {e}")
+                continue
+        
+        # 如果有数据，保存到新的Excel文件
+        if not combined_df.empty:
+            merged_df = combined_df.drop_duplicates()
+            # merged_df.to_excel(output_file, index=False)
+            self.split_pd_excel(merged_df,output_path)
+            print(f"合并后的数据已保存到 {output_path}")
+            
+        else:
+            print("没有找到有效数据")
+            return None
+    
+    def split_pd_excel(self,combined_df, output_path,deal_file_limit=10000):
+            os.makedirs(output_path, exist_ok=True)
+            os.makedirs(f"{output_path}/excel", exist_ok=True)
+            os.makedirs(f"{output_path}/failed", exist_ok=True)
+            os.makedirs(f"{output_path}/success", exist_ok=True)
+            # 按 max_rows 分割数据
+            total_rows = len(combined_df)
+            part_index = 0
+            for start in range(0, total_rows, deal_file_limit):
+                # 提取当前分片
+                df_chunk = combined_df.iloc[start:start + deal_file_limit]
+
+                # 生成输出文件路径（part_0001, part_0002, ...）
+                # part_index = part_index + start // deal_file_limit + 1
+                part_index = part_index  + 1
+                temp_name="part_"+str(part_index).zfill(3)+".xlsx"
+                output_file = os.path.join(output_path,"excel",temp_name)
+
+                # 保存到新的 Excel 文件
+                df_chunk.to_excel(output_file, index=False, columns=self.fixed_headers)
+                print(f"生成文件: {temp_name}，行数: {len(df_chunk)}")
+                
+            
+
+# 使用示例
+# split_to_multiple_sheets(merged_df, "large_data_multi_sheet.xlsx")
+if __name__ == "__main__":
+    t=Tools()
+    t.merge_excel_excels("C:\\Users\\Administrator\\Desktop\\浙江_江苏",  "zhejiang_jiangsu")
+    

@@ -14,6 +14,11 @@ class crm:
     customer_detail_url="https://api1.likewon.cn/api/ProtectingCustomers/GetCustomerDetail"
     genjin_submit_url="https://api1.likewon.cn/api/CustomerSaleRecord/AddSaleRecord"
     limit_day=15
+    headers={
+                'Authorization': '',
+                'Content-Type': 'application/json',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
 
     genjin_json=[{'p_name':'微信','p_id':'20056','followUpType':'101309','label_id':'20057','label_name':'意向','context':'微信推送了行业汇资需给客户，客户对此很感兴趣并进行了简短交流，有效维护了客情关系并挖掘新需求。'},
                  {'p_name':'微信','p_id':'20056','followUpType':'101309','label_id':'20058','label_name':'考虑','context':'本周重点跟进。客户已收到方案，预计下周反馈；初步意向明确，正安排测试跟进。'},
@@ -100,33 +105,48 @@ class crm:
         res=requests.post(self.login_url,json=json_data)
         if res.status_code==200 and res.json()['code']==0:
             self.user_info=res.json()['data']
+            self.headers['Authorization'] = f'Bearer {self.user_info["accessToken"]}'
+            print("登录成功")
         else:
+            print("登录失败")
             self.user_info=None
             
-        print(self.user_info)
+        # print(self.user_info)
     def genjin(self,customer_list):
         for customer in customer_list:
             remain_day=self.extract_integers(customer['waitMarketerCountdown'])
-            print(customer['companyName'],",剩余天数:",remain_day)
+            # print(customer['companyName'],",剩余天数:",remain_day)
             if remain_day<self.limit_day:
-                detail=self.get_customer_detail(customer['customerId'])
+                print("客户：",customer['companyName'],"剩余天数:",remain_day,'，需要跟进')
+                detail=self.get_customer_detail(customer['customerId'],customer['saleUserId'],customer['lineId'])
                 customerContactsList=detail['customerContactsList']
                 if len(customerContactsList)>0:
                     contactsId=customerContactsList[0]['contactsId']
                     
-                    self.genjin_submit(customer['customerId'],contactsId)
+                    self.genjin_submit(customer['customerId'],customer['saleUserId'],contactsId,customer['lineId'])
                     print("客户：",customer['companyName'],"提交跟进")
                 else:
                     print("客户：",customer['companyName'],"无联系人")
                 
-    def genjin_submit(self,customer_id,contactId):
-        saleUserId=self.user_info['saleUserId']
+    def genjin_submit(self,customer_id,saleUserId,contactId,lineId):
+        # saleUserId=self.user_info['saleUserId']
         token=self.user_info['accessToken']
         label=random.choice(self.genjin_json)
        
         
         day_str,start_time,end_time=self.get_random_time_period()
-        
+        # customerId 9938945052617992
+        # saleUserId 51041
+        # contactId 9685247370441228
+        # description 向客户完整传达了产品核心价值。对方暂未回。判断为信息已送达但未激发即时需求。无需过度跟进，计划以分享一篇相关行业报告进行破冰
+        # followUpType 101309
+        # lineId 2
+        # recordId 0
+        # delFileId
+        # followupDate 2025-10-15
+        # followBegionTime 14:02:07
+        # followEndTime 14:37:19
+        # flagIds 20058
         multipart_data = MultipartEncoder(
             fields={
                 'customerId':str(customer_id),
@@ -134,7 +154,7 @@ class crm:
                 'contactId':str(contactId),
                 'description':label['context'],
                 'followUpType':str(label['followUpType']),
-                'lineId':str(2),
+                'lineId':str(lineId),
                 'recordId':str(0),
                 'delFileId':'',
                 'followupDate':day_str,
@@ -143,60 +163,47 @@ class crm:
                 'flagIds':str(label['label_id']),
             }
         )
-        headers={
-                'Accept': 'application/json',
-                'Authorization': f'Bearer {token}',
-                'Content-Type': multipart_data.content_type,
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            }
-        
+        headers=self.headers.copy()
+        headers['Content-Type'] = multipart_data.content_type
+
         res=requests.post(self.genjin_submit_url,data=multipart_data,headers=headers)
         if res.status_code==200 and res.json()['code']==0:
-            print("客户：",customer_id,"提交跟进成功")
+            print("客户：",customer_id,"提交跟进成功",res.json())
         else:
-            print("客户：",customer_id,"提交跟进失败")
+            print("客户：",customer_id,"提交跟进失败",res.json())
         # print(res.json())
         
-    def get_customer_detail(self,customer_id):
-        token=self.user_info['accessToken']
-        headers={
-                'Authorization': f'Bearer {token}',
-                'Content-Type': 'application/json',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            }
+    def get_customer_detail(self,customer_id,saleUserId,LineId=2):
+        
         params={
             'CustomerId':customer_id,
-            'LineId':2,
-            'SaleUserId':self.user_info['saleUserId'],
+            'LineId':LineId,
+            'SaleUserId':saleUserId,
             'state':100002,
         }
-        res=requests.get(self.customer_detail_url,params=params,headers=headers)
+        res=requests.get(self.customer_detail_url,params=params,headers=self.headers)
         if res.status_code==200 and res.json()['code']==0:
             return res.json()['data']
         else:   
             return None
         
-    def get_customer_list(self):
+    def get_customer_list(self,LineId=2):
         customer_list=[]
         params_data={
             "pageIndex": 1,
             "Scope": 0,
-            'LineId':2,
+            'LineId':LineId,
             'CompanyName':'',
             'State':100002
             }
         cur_page=1
-        token=self.user_info['accessToken']
-        headers={
-                'Authorization': f'Bearer {token}',
-                'Content-Type': 'application/json',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            }
+
         while True:
             # print(cur_page)
             params_data['pageIndex']=cur_page
             # print(params_data)
-            res=requests.get(self.customer_url,params=params_data,headers=headers)
+            res=requests.get(self.customer_url,params=params_data,headers=self.headers )
+            # print(res.json())
             # print(res.json())
             if res.status_code==200 and res.json()['code']==0:
                 c_list=res.json()['data']['customerList']
@@ -221,7 +228,13 @@ if __name__ == '__main__':
     # crm.login("liuhaixia","huifa888")
     # crm.login("hanfeng@lawxp.com","654321")
     crm.login("guojiancheng","Gjc523220313")
-    customer_list=crm.get_customer_list()
-    print(customer_list)
+    LineId=2 #风控业务
+    customer_list=crm.get_customer_list(LineId)
+    # print(customer_list)
+    crm.genjin(customer_list)
+
+    LineId=15 #汇资需业务
+    customer_list=crm.get_customer_list(LineId)
+    # print(customer_list)
     crm.genjin(customer_list)
     # crm.genjin_submit('9685763841447336','9609869859444000')

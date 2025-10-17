@@ -50,6 +50,9 @@ class MainWindow(QtWidgets.QMainWindow):
         # 设置进度条
         self.progressBar.setRange(0, 100)
         self.progressBar.setValue(0)
+
+        self.limitCount.setText("5000")
+        
         
         self.selectXinhao.addItem("m10/普通精准", 209733)
         self.selectXinhao.addItem("m60/普通精准", 212888)
@@ -106,9 +109,9 @@ class MainWindow(QtWidgets.QMainWindow):
         print(file_name)
         limit_num=int(self.limitCount.text())
         if limit_num<100:
-            limit_num=5000
-            self.show_msgbox("分割参数不正确，分割值太低.区间：1000-5000")
-            self.limitCount.setText("5000")
+            limit_num=10000
+            self.show_msgbox("分割参数不正确，分割值太低.区间：1000-10000")
+            self.limitCount.setText("10000")
             return
         ret=tt.thread_split_excel(self.excelFile.text(),self.savePath.text(),limit_num)
         self.startSplitExcel.setEnabled(False)
@@ -155,6 +158,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 
         tt=Tools()
         tt.init_upload(account,password,upload_path,service_id,whether, day_max_number,last_time)
+        token=tt.get_token()
+        if token==None:
+            self.show_msgbox("登录失败，请检查账号密码")
+            return
         tt.pre_upload_path()
         self.startUpload.setEnabled(False)
         tt.start_upload_thread()

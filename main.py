@@ -341,44 +341,44 @@ def pre_upload_path(deal_file_path):
 # 使用示例
 if __name__ == "__main__":
      # 示例用法
-    # source_dirs = [
-    #     "output\\output_1",
-    #     "output\\output_2",
-    #     "output\\output_3",
-    #     "output\\output_4"
-    # ]
-    # target_dir = "output_ok"
+    source_dirs = [
+        "output\\output_1",
+        "output\\output_2",
+        "output\\output_3",
+        "output\\output_4"
+    ]
+    target_dir = "output_ok"
     
     # # 调用函数(可以自定义前缀和位数)
-    # merge_and_rename_folders(
-    #     source_dirs=source_dirs,
-    #     target_dir=target_dir,
-    #     prefix="file_",  # 可选前缀
-    #     digits=4         # 数字位数(如0001, 0002等)
-    # )
+    merge_and_rename_folders(
+        source_dirs=source_dirs,
+        target_dir=target_dir,
+        prefix="file_",  # 可选前缀
+        digits=4         # 数字位数(如0001, 0002等)
+    )
     # exit()
 
-    if deal_type==2: 
-        # 处理已经分割好的文件
-        file_path=pre_upload_path(deal_file_path)
-    elif deal_type==1:
-        if deal_file_name=="":
-            print("deal_file_name文件路径不能为空")
-            exit()
-        if not os.path.exists(deal_file_name):
-            print("deal_file_name文件不存在")
-            exit()
-        # file_path,upload_file_list=split_large_excel(deal_file_name)
-        file_path,upload_file_list=split_excel_pd(deal_file_name)
-        exit()
+    # if deal_type==2: 
+    #     # 处理已经分割好的文件
+    #     file_path=pre_upload_path(deal_file_path)
+    # elif deal_type==1:
+    #     if deal_file_name=="":
+    #         print("deal_file_name文件路径不能为空")
+    #         exit()
+    #     if not os.path.exists(deal_file_name):
+    #         print("deal_file_name文件不存在")
+    #         exit()
+    #     # file_path,upload_file_list=split_large_excel(deal_file_name)
+    #     file_path,upload_file_list=split_excel_pd(deal_file_name)
+    #     exit()
     
-    else:
-        print("deal_type参数错误")
-        exit()
+    # else:
+    #     print("deal_type参数错误")
+    #     exit()
         
-    page=login_to_website()
-    if page==None:
-        print("登录失败")
-        exit()
-    deal_files(page,file_path)
+    # page=login_to_website()
+    # if page==None:
+    #     print("登录失败")
+    #     exit()
+    # deal_files(page,file_path)
     # upload_file_to_website(page, r"D:\\develop\\huizixu\\temp_20250818_110004\\excel\\part_001.xlsx")
